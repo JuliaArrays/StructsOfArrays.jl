@@ -11,6 +11,32 @@ in memory, and different fields are stored in different arrays. This permits
 SIMD optimizations in more cases and can also save a bit of memory if the object
 contains padding. It is especially useful for arrays of complex numbers.
 
+## Usage
+
+You can construct a StructOfArrays directly:
+
+```julia
+using StructsOfArrays
+A = StructOfArrays(Complex128, 10, 10)
+```
+
+or by converting an AbstractArray:
+
+```julia
+A = convert(StructOfArrays, complex(randn(10), randn(10)))
+```
+
+Beyond that, there's not much to say. Assignment and indexing works as with
+other AbstractArray types. Indexing a `StructOfArrays{T}` yields an object of
+type `T`, and you can assign objects of type `T` to a given index. The "magic"
+is in the optimizations that the alternative memory layout allows LLVM to
+perform.
+
+While you can create a StructOfArrays of non-`isbits` immutables, this is
+probably slower than an ordinary array, since a new object must be heap
+allocated every time the StructOfArrays is indexed. In practice, StructsOfArrays
+works best with `isbits` immutables such as `Complex{T}`.
+
 ## Benchmark
 
 ```julia
