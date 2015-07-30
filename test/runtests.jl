@@ -13,8 +13,10 @@ sim = similar(soa)
 @test typeof(sim) == typeof(soa)
 @test size(sim) == size(soa)
 
-regular = complex(randn(10, 10), randn(10, 10))
+regular = complex(randn(10, 5), randn(10, 5))
 soa = convert(SoArray, regular)
-for i = 1:10, j = 1:10
+for i = 1:10, j = 1:5
     @test regular[i, j] == soa[i, j]
 end
+@test size(soa, 1) == 10
+@test size(soa, 2) == 5
