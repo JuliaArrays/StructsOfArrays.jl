@@ -14,7 +14,17 @@ end
 end
 SoArray(T::Type, dims::Tuple{Vararg{Integer}}) = SoArray(T, dims...)
 
+Base.similar(A::SoArray, T, dims::Dims) = SoArray(T, dims)
+
+Base.convert{T,S,N}(::Type{SoArray{T,N}}, A::AbstractArray{S,N}) =
+    copy!(SoArray(T, size(A)), A)
+Base.convert{T,S,N}(::Type{SoArray{T}}, A::AbstractArray{S,N}) =
+    convert(SoArray{T,N}, A)
+Base.convert{T,N}(::Type{SoArray}, A::AbstractArray{T,N}) =
+    convert(SoArray{T,N}, A)
+
 Base.size(A::SoArray) = size(A.arrays[1])
+
 @generated function Base.getindex{T}(A::SoArray{T}, i::Integer)
     Expr(:block, Expr(:meta, :inline),
          Expr(:new, T, [:(A.arrays[$j][i]) for j = 1:length(T.types)]...))
