@@ -1,5 +1,8 @@
 # SoArrays
 
+[![Build Status](https://travis-ci.org/simonster/SoArrays.jl.svg?branch=master)](https://travis-ci.org/simonster/SoArrays.jl)
+[![codecov.io](http://codecov.io/github/simonster/SoArrays.jl/coverage.svg?branch=master)](http://codecov.io/github/simonster/SoArrays.jl?branch=master)
+
 A traditional Julia array of immutable objects is an array of structures. Fields
 of a given object are stored adjacent in memory. However, this often inhibits
 SIMD optimizations. SoArrays implements the classic structure of arrays
