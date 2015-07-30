@@ -74,5 +74,5 @@ Minimum elapsed time: 713.730 μs
 ```
 
 In this case, StructsOfArrays are about 1.5x faster than ordinary arrays.
-Inspection of generated code demonstrates that `sum(soa)` uses SIMD
-instructions, while `sum(regular)` does not.
+Inspection of generated code demonstrates that `f(soa, a)` uses SIMD
+instructions, while `f(regular, a)` does not.
