@@ -39,3 +39,7 @@ Average elapsed time: 754.942 μs
 
 Inspection of generated code demonstrates that `sum(soa)` uses SIMD
 instructions, while `sum(regular)` does not.
+
+(This is not necessarily the best benchmark, since it should be possible to
+vectorize both sums, but at present Julia can only vectorize with the SoA
+optimization.)
