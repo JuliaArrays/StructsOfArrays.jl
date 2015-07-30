@@ -8,6 +8,6 @@ notifications:
   email: false
 script:
  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
- - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("SoArrays"); Pkg.test("SoArrays"; coverage=true)'
+ - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("StructsOfArrays"); Pkg.test("StructsOfArrays"; coverage=true)'
 after_success:
-  - julia -e 'cd(Pkg.dir("SoArrays")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'cd(Pkg.dir("StructsOfArrays")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
