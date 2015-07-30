@@ -14,6 +14,8 @@ end
 end
 SoArray(T::Type, dims::Tuple{Vararg{Integer}}) = SoArray(T, dims...)
 
+Base.linearindexing{T<:SoArray}(::Type{T}) = Base.LinearFast()
+
 Base.similar(A::SoArray, T, dims::Dims) = SoArray(T, dims)
 
 Base.convert{T,S,N}(::Type{SoArray{T,N}}, A::AbstractArray{S,N}) =

@@ -12,3 +12,9 @@ soa64 = convert(SoArray{Complex64}, regular)
 sim = similar(soa)
 @test typeof(sim) == typeof(soa)
 @test size(sim) == size(soa)
+
+regular = complex(randn(10, 10), randn(10, 10))
+soa = convert(SoArray, regular)
+for i = 1:10, j = 1:10
+    @test regular[i, j] == soa[i, j]
+end
