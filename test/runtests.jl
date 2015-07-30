@@ -1,5 +1,7 @@
 using SoArrays
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+regular = complex(randn(10000000), randn(10000000))
+soa = SoArray(Complex128, size(regular))
+copy!(soa, regular)
+@test_approx_eq regular soa

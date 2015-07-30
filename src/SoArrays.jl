@@ -12,6 +12,7 @@ end
     arrtuple = Tuple{[Array{T.types[i],N} for i = 1:length(T.types)]...}
     :(SoArray{T,$N,$arrtuple}(($([:(Array($(T.types[i]), dims)) for i = 1:length(T.types)]...),)))
 end
+SoArray(T::Type, dims::Tuple{Vararg{Integer}}) = SoArray(T, dims...)
 
 Base.size(A::SoArray) = size(A.arrays[1])
 @generated function Base.getindex{T}(A::SoArray{T}, i::Integer)
