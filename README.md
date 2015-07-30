@@ -9,7 +9,7 @@ SIMD optimizations. StructsOfArrays implements the classic structure of arrays
 optimization. The contents of a given field for all objects is stored linearly
 in memory, and different fields are stored in different arrays. This permits
 SIMD optimizations in more cases and can also save a bit of memory if the object
-contains padding.
+contains padding. It is especially useful for arrays of complex numbers.
 
 ## Benchmark
 
@@ -18,28 +18,35 @@ using StructsOfArrays
 regular = complex(randn(1000000), randn(1000000))
 soa = convert(StructOfArrays, regular)
 
+function f(x, a)
+    s = zero(eltype(x))
+    @simd for i in 1:length(x)
+        @inbounds s += x[i] * a
+    end
+    s
+end
+
 using Benchmarks
-@benchmark sum(regular)
-@benchmark sum(soa)
+@benchmark f(regular, 0.5+0.5im)
+@benchmark f(soa, 0.5+0.5im)
 ```
 
-The time for `sum(regular)` is:
+The time for `f(regular, 0.5+0.5im)` is:
 
 ```
-Average elapsed time: 1.018 ms
-  95% CI for average: [887.090 μs, 1.149 ms]
+Average elapsed time: 1.244 ms
+  95% CI for average: [1.183 ms, 1.305 ms]
+Minimum elapsed time: 1.177 ms
 ```
 
-and for `sum(soa)`:
+and for `f(soa, 0.5+0.5im)`:
 
 ```
-Average elapsed time: 754.942 μs
-  95% CI for average: [688.003 μs, 821.880 μs]
+Average elapsed time: 832.198 μs
+  95% CI for average: [726.349 μs, 938.048 μs]
+Minimum elapsed time: 713.730 μs
 ```
 
+In this case, StructsOfArrays are about 1.5x faster than ordinary arrays.
 Inspection of generated code demonstrates that `sum(soa)` uses SIMD
 instructions, while `sum(regular)` does not.
-
-(This is not necessarily the best benchmark, since it should be possible to
-vectorize both sums, but at present Julia can only vectorize with the SoA
-optimization.)
