@@ -20,3 +20,14 @@ for i = 1:10, j = 1:5
 end
 @test size(soa, 1) == 10
 @test size(soa, 2) == 5
+
+immutable OneField
+    x::Int
+end
+
+small = StructOfArrays(Complex64, 2)
+@test typeof(similar(small, Complex)) === Vector{Complex}
+@test typeof(similar(small, Int)) === Vector{Int}
+@test typeof(similar(small, SubString)) === Vector{SubString}
+@test typeof(similar(small, OneField)) === Vector{OneField}
+@test typeof(similar(small, Complex128)) <: StructOfArrays

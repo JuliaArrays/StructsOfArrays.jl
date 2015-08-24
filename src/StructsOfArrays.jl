@@ -6,7 +6,7 @@ immutable StructOfArrays{T,N,U<:Tuple} <: AbstractArray{T,N}
 end
 
 @generated function StructOfArrays{T}(::Type{T}, dims::Integer...)
-    !isleaftype(T) || T.mutable && return :(throw(ArgumentError("can only create an StructOfArrays of leaf type immutables")))
+    (!isleaftype(T) || T.mutable) && return :(throw(ArgumentError("can only create an StructOfArrays of leaf type immutables")))
     isempty(T.types) && return :(throw(ArgumentError("cannot create an StructOfArrays of an empty or bitstype")))
     N = length(dims)
     arrtuple = Tuple{[Array{T.types[i],N} for i = 1:length(T.types)]...}
@@ -16,7 +16,13 @@ StructOfArrays(T::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, dims..
 
 Base.linearindexing{T<:StructOfArrays}(::Type{T}) = Base.LinearFast()
 
-Base.similar(A::StructOfArrays, T, dims::Dims) = StructOfArrays(T, dims)
+@generated function Base.similar{T}(A::StructOfArrays, ::Type{T}, dims::Dims)
+    if isbits(T) && length(T.types) > 1
+        :(StructOfArrays(T, dims))
+    else
+        :(Array(T, dims))
+    end
+end
 
 Base.convert{T,S,N}(::Type{StructOfArrays{T,N}}, A::AbstractArray{S,N}) =
     copy!(StructOfArrays(T, size(A)), A)
