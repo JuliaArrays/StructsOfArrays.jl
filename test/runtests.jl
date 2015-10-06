@@ -35,3 +35,6 @@ small = StructOfArrays(Complex64, 2)
 fields = StructOfArrays(OneField, 2)
 @test typeof(fields[:x]) === Vector{Int}
 @test length(fields[:x]) == 2
+
+fields[:x] = [1, 2]
+@test fields[:x] == [1, 2]
