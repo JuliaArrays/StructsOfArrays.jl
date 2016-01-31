@@ -46,7 +46,7 @@ make_iterable(x) = ScalarRepeat(x)
     arrtuple = Tuple{[Array{eltypes[i],N} for i = 1:length(eltypes)]...}
 
     :(StructOfArrays{T,$N,$arrtuple}(
-        ($([:(Array($(eltypes[i]), dims)) for i = 1:length(eltypes)]...),)
+        ($([:(Array($(eltypes[i]), (dim1, rest...))) for i = 1:length(eltypes)]...),)
     ))
 end
 StructOfArrays(T::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, dims...)
