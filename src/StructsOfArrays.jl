@@ -28,10 +28,13 @@ function StructOfArrays(T::Type, first_array::AbstractArray, rest::AbstractArray
     end
     # flattened eltypes don't match with flattened struct type
     if target_eltypes != source_eltypes
-        throw(ArgumentError(
-            "$target_eltypes\n\n$source_eltypes"
-        ))
+        throw(ArgumentError("""$T does not match the given parameters.
+        Argument types: $(map(typeof, arrays))
+        Flattened struct types: $target_eltypes
+        Flattened argument types: $source_eltypes
+        """))
     end
+    # flattened they match! ♥💕
     typetuple = Tuple{map(typeof, arrays)...}
     StructOfArrays{T, ndims(first_array), typetuple}(arrays)
 end
@@ -56,7 +59,10 @@ Base.convert{T,N}(::Type{StructOfArrays}, A::AbstractArray{T,N}) =
 Base.size(A::StructOfArrays) = size(first(A.arrays))
 Base.size(A::StructOfArrays, d) = size(first(A.arrays), d)
 
-
+"""
+returns all field types of a composite type or tuple.
+If it's neither composite, nor tuple, it will just return the DataType.
+"""
 fieldtypes{T<:Tuple}(::Type{T}) = (T.parameters...)
 function fieldtypes{T}(::Type{T})
     if nfields(T) > 0
@@ -118,7 +124,7 @@ function flatindexes(arrays)
         tmpsym = symbol("value$i")
         push!(temporaries, :($(tmpsym) = A.arrays[$i][i...]))
         index_expr = :($tmpsym)
-        append!(flat_indices, flatindexes(eltype(array), index_expr, flat_indices))
+        flatindexes(eltype(array), index_expr, flat_indices)
     end
     flat_indices, temporaries
 end
@@ -126,14 +132,15 @@ end
 function flatindexes(T, index_expr, flat_indices)
     fields = fieldtypes(T)
     if isa(fields, DataType)
-        return [index_expr]
+        push!(flat_indices, index_expr)
+        return nothing
     else
         for (i,T) in enumerate(fields)
             new_index_expr = :($(index_expr).($i))
-            append!(flat_indices, flatindexes(T, new_index_expr, flat_indices))
+            flatindexes(T, new_index_expr, flat_indices)
         end
     end
-    flat_indices
+    nothing
 end
 
 """
@@ -143,6 +150,8 @@ element for every field in `T`.
 """
 function typecreator(T, lower_constr, flat_indices, i=1)
     i>length(flat_indices) && return i
+    # we need to special case tuples, since e.g. Tuple{Float32, Float32}(1f0, 1f0)
+    # is not defined.
     if T<:Tuple
         constructor = Expr(:tuple)
     else
@@ -161,11 +170,13 @@ function typecreator(T, lower_constr, flat_indices, i=1)
     return i
 end
 
-
 @generated function Base.getindex{T, N, ArrayTypes}(A::StructOfArrays{T, N, ArrayTypes}, i::Integer...)
+    #flatten the indices,
     flat_indices, temporaries = flatindexes((ArrayTypes.parameters...))
     type_constructor = Expr(:block)
-    typecreator(T, type_constructor , flat_indices)
+    # create a constructor expression, which uses the flattened indexes to create the type
+    typecreator(T, type_constructor, flat_indices)
+    # put everything in a block!
     Expr(:block, Expr(:meta, :inline), temporaries..., type_constructor)
 end
 
