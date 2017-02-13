@@ -46,4 +46,21 @@ end
         x
     end
 end
+
+function Base.getindex{T}(A::StructOfArrays{T}, s::Symbol)
+    idx = findfirst(fieldnames(T), s)
+    if (idx == 0)
+        throw(KeyError(s))
+    end
+    A.arrays[idx]
+end
+
+function Base.setindex!{T}(A::StructOfArrays{T}, x, s::Symbol)
+    idx = findfirst(fieldnames(T), s)
+    if (idx == 0)
+        throw(KeyError(s))
+    end
+    A.arrays[idx][:] = x
+end
+
 end # module

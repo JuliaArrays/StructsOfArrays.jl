@@ -32,3 +32,10 @@ small = StructOfArrays(Complex64, 2)
 @test typeof(similar(small, SubString)) === Vector{SubString}
 @test typeof(similar(small, OneField)) === Vector{OneField}
 @test typeof(similar(small, Complex128)) <: StructOfArrays
+
+fields = StructOfArrays(OneField, 2)
+@test typeof(fields[:x]) === Vector{Int}
+@test length(fields[:x]) == 2
+
+fields[:x] = [1, 2]
+@test fields[:x] == [1, 2]
