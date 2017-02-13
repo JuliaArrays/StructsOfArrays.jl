@@ -10,7 +10,7 @@ end
     isempty(T.types) && return :(throw(ArgumentError("cannot create an StructOfArrays of an empty or bitstype")))
     N = length(dims)
     arrtuple = Tuple{[Array{T.types[i],N} for i = 1:length(T.types)]...}
-    :(StructOfArrays{T,$N,$arrtuple}(($([:(Array($(T.types[i]), dims)) for i = 1:length(T.types)]...),)))
+    :(StructOfArrays{T,$N,$arrtuple}(($([:(Array{$(T.types[i])}(dims)) for i = 1:length(T.types)]...),)))
 end
 StructOfArrays(T::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, dims...)
 
@@ -20,7 +20,7 @@ Base.linearindexing{T<:StructOfArrays}(::Type{T}) = Base.LinearFast()
     if isbits(T) && length(T.types) > 1
         :(StructOfArrays(T, dims))
     else
-        :(Array(T, dims))
+        :(Array{T}(dims))
     end
 end
 
