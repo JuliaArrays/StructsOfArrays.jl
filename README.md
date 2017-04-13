@@ -37,6 +37,105 @@ probably slower than an ordinary array, since a new object must be heap
 allocated every time the StructOfArrays is indexed. In practice, StructsOfArrays
 works best with `isbits` immutables such as `Complex{T}`.
 
+## Advanced Usage
+
+When embedding a StructOfArrays in a larger, data structure, it can be useful
+to automatically compute the SoA type corresponding to a regular arrays type.
+This can be accomplished using the `similar` function:
+
+```
+struct Vectors
+    x::similar(StructOfArrays, Vector{Complex{Float64}})
+    y::similar(StructOfArrays, Vector{Complex{Float64}})
+end
+# equivalent in layout to
+struct Vectors
+    x_real::Vector{Float64}
+    x_imag::Vector{Float64}
+    y_real::Vector{Float64}
+    y_imag::Vector{Float64}
+end
+```
+
+Note that this feature also works with parameterized types. However, if
+later a composite type is substituted for type type parameter, it will not
+be unpacked into separate arrays:
+
+```
+struct Vector3D{T}
+    x::T
+    y::T
+    z::T
+end
+struct Container{T}
+    soa::similar(StructOfArrays, Vector{Vector3D{T}})
+end
+# Container{Float64} is equivalent to
+struct ContainerFloat64
+    soa_x::Vector{Float64}
+    soa_y::Vector{Float64}
+    soa_z::Vector{Float64}
+end
+# Container{Complex{Float64}} is equivalent to
+struct ContainerFloat64
+    soa_x::Vector{Complex{Float64}}
+    soa_y::Vector{Complex{Float64}}
+    soa_z::Vector{Complex{Float64}}
+end
+# Note that this is different from similar(StructOfArrays, Vector{Vector3D{Complex{Float64}}}), which would expand to
+struct ContainerFloat64
+    soa_x_real::Vector{Float64}
+    soa_x_imag::Vector{Float64}
+    soa_y_real::Vector{Float64}
+    soa_y_imag::Vector{Float64}
+    soa_y_real::Vector{Float64}
+    soa_y_imag::Vector{Float64}
+end
+```
+
+This behavior was chosen to accomodate julia's handling of parameterize element,
+types. If future versions of julia expand these capabilities, the default behavior
+may need to be revisited.
+
+Lastly, note that it is possible to choose control the recursion explicitly, 
+by providing a type (as the second type parameters) whose subtypes should be
+considered leaves for the purpose of recursion. E.g.:
+```
+struct Bundle
+    x::Complex{Float64}
+    y::Complex{Int64}
+    z::Rational{Int64}
+end
+# Consider
+A = StructOfArrays{Bundle, Any}(2,2)
+# Since all types are <: Any, no recusion will occur, and the SoaA is equivalent to
+struct SoAAny
+    x::Matrix{Complex{Float64}}
+    y::Matrix{Complex{Int64}}    
+    z::Matrix{Rational{Int64}}
+end
+# Next, let's say we want to have separate SoA for the complex values. Consider
+B = StructOfArrays{Bundle, Complex}(2,2)
+# which will be equivalent to
+struct SoAComplex
+    x_real::Matrix{Float64}
+    x_imag::Matrix{Float64}
+    y_real::Matrix{Int64}
+    y_imag::Matrix{Int64}
+    z::Matrix{Rational{Int64}}
+end
+# Lastly it is of course possible to specify a union:
+C = StructOfArrays{Bundle, Union{Complex{Float64},Rational}}(2,2)
+struct SoAUnion
+    x_real::Matrix{Float64}
+    x_imag::Matrix{Float64}
+    y::Matrox{Complex{Int64}}
+    z_num::Matrix{Int64}
+    z_den::Matrix{Int64}
+end
+```
+
+
 ## Benchmark
 
 ```julia
