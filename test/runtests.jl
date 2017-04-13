@@ -32,3 +32,13 @@ small = StructOfArrays(Complex64, 2)
 @test typeof(similar(small, SubString)) === Vector{SubString}
 @test typeof(similar(small, OneField)) === Vector{OneField}
 @test typeof(similar(small, Complex128)) <: StructOfArrays
+
+# Recursive structs
+immutable TwoField
+    one::OneField
+    two::OneField
+end
+
+small = StructOfArrays(TwoField, 2, 2)
+small[1,1] = TwoField(OneField(1), OneField(2))
+@test small[1,1] == TwoField(OneField(1), OneField(2))
