@@ -70,7 +70,7 @@ end
 
 @generated function Base.getindex{T}(A::StructOfArrays{T}, i::Integer...)
     strct, _ = generate_getindex(T, 1)
-    Expr(:block, Expr(:meta, :inline), strct)
+    Expr(:block, Expr(:meta, :inline), Expr(:meta, :propagate_inbounds), strct)
 end
 
 function generate_setindex(T, x, arraynum)
@@ -92,7 +92,8 @@ end
 @generated function Base.setindex!{T}(A::StructOfArrays{T}, x, i::Integer...)
     exprs = Expr(:block, generate_setindex(T, :x, 1)[1]...)
     quote
-        $(Expr(:meta, :inline))
+        Base.@_inline_meta
+        Base.@_propagate_inbounds_meta
         v = convert(T, x)
         $exprs
         x
