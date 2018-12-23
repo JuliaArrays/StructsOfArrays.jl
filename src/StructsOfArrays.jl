@@ -1,15 +1,13 @@
 module StructsOfArrays
 
-using Compat
-
 export StructOfArrays
 
-immutable StructOfArrays{T,N,U<:Tuple} <: AbstractArray{T,N}
+struct StructOfArrays{T,N,U<:Tuple} <: AbstractArray{T,N}
     arrays::U
 end
 
 function gather_eltypes(T, visited = Set{Type}())
-    (!isleaftype(T) || T.mutable) && throw(ArgumentError("can only create an StructOfArrays of leaf type immutables"))
+    (!isconcretetype(T) || T.mutable) && throw(ArgumentError("can only create an StructOfArrays of concrete type immutable structs"))
     isempty(T.types) && throw(ArgumentError("cannot create an StructOfArrays of an empty or bitstype"))
     types = Type[]
     push!(visited, T)
@@ -25,29 +23,29 @@ function gather_eltypes(T, visited = Set{Type}())
     types
 end
 
-@generated function StructOfArrays{T}(::Type{T}, dims::Integer...)
+@generated function StructOfArrays(::Type{T}, dims::Integer...) where {T}
     N = length(dims)
     types = gather_eltypes(T)
     arrtuple = Tuple{[Array{S,N} for S in types]...}
-    :(StructOfArrays{T,$N,$arrtuple}(($([:(Array{$(S)}(dims)) for S in types]...),)))
+    :(StructOfArrays{T,$N,$arrtuple}(($([:(Array{$(S)}(undef, dims)) for S in types]...),)))
 end
 StructOfArrays(T::Type, dims::Tuple{Vararg{Integer}}) = StructOfArrays(T, dims...)
 
-@compat Base.IndexStyle{T<:StructOfArrays}(::Type{T}) = IndexLinear()
+Base.IndexStyle(::Type{T}) where {T<:StructOfArrays} = IndexLinear()
 
-@generated function Base.similar{T}(A::StructOfArrays, ::Type{T}, dims::Dims)
-    if isbits(T) && length(T.types) > 1
+@generated function Base.similar(A::StructOfArrays, ::Type{T}, dims::Dims) where {T}
+    if isbitstype(T) && length(T.types) > 1
         :(StructOfArrays(T, dims))
     else
-        :(Array{T}(dims))
+        :(Array{T}(undef, dims))
     end
 end
 
-Base.convert{T,S,N}(::Type{StructOfArrays{T,N}}, A::AbstractArray{S,N}) =
-    copy!(StructOfArrays(T, size(A)), A)
-Base.convert{T,S,N}(::Type{StructOfArrays{T}}, A::AbstractArray{S,N}) =
+Base.convert(::Type{StructOfArrays{T,N}}, A::AbstractArray{S,N}) where {T,S,N} =
+    copyto!(StructOfArrays(T, size(A)), A)
+Base.convert(::Type{StructOfArrays{T}}, A::AbstractArray{S,N}) where {T,S,N} =
     convert(StructOfArrays{T,N}, A)
-Base.convert{T,N}(::Type{StructOfArrays}, A::AbstractArray{T,N}) =
+Base.convert(::Type{StructOfArrays}, A::AbstractArray{T,N}) where {T,N} =
     convert(StructOfArrays{T,N}, A)
 
 Base.size(A::StructOfArrays) = size(A.arrays[1])
@@ -68,7 +66,7 @@ function generate_getindex(T, arraynum)
     Expr(:new, T, members...), arraynum
 end
 
-@generated function Base.getindex{T}(A::StructOfArrays{T}, i::Integer...)
+@generated function Base.getindex(A::StructOfArrays{T}, i::Integer...) where {T}
     strct, _ = generate_getindex(T, 1)
     Expr(:block, Expr(:meta, :inline), strct)
 end
@@ -89,7 +87,7 @@ function generate_setindex(T, x, arraynum)
     exprs, arraynum
 end
 
-@generated function Base.setindex!{T}(A::StructOfArrays{T}, x, i::Integer...)
+@generated function Base.setindex!(A::StructOfArrays{T}, x, i::Integer...) where {T}
     exprs = Expr(:block, generate_setindex(T, :x, 1)[1]...)
     quote
         $(Expr(:meta, :inline))
