@@ -1,6 +1,7 @@
 using StructsOfArrays
 using Test
 using Random
+using StaticArrays
 
 @testset "StructsOfArrays.jl" begin
     @testset "constructor" begin
@@ -51,5 +52,15 @@ using Random
         small = StructOfArrays(TwoField, Array, 2, 2)
         small[1,1] = TwoField(OneField(1), OneField(2))
         @test small[1,1] == TwoField(OneField(1), OneField(2))
+    end
+
+    @testset "StaticArrays" begin
+        type = SArray{Tuple{3},Float64,1,3}
+        regular = rand(MersenneTwister(0), type, 10000)
+        soa = convert(StructOfArrays, regular)
+        @test regular == soa
+        @test sum(regular) ≈ sum(soa)
+        @test eltype(regular) === eltype(soa)
+        @test regular[3] === soa[3]
     end
 end
