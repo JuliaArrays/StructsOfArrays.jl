@@ -1,6 +1,7 @@
 module StructsOfArrays
 
 export StructOfArrays
+export replace_storage
 
 using Adapt
 
@@ -32,12 +33,27 @@ end
 _type_with_eltype(::Type{<:Array}, T, N) = Array{T, N}
 _type(::Type{<:Array}) = Array
 
-function Adapt.adapt_structure(to, x::StructOfArrays{T, N}) where {T, N}
-    arrays = map(A -> adapt(to, A), x.arrays)
+using CUDAapi
+if has_cuda_gpu()
+    import CuArrays
+    import CuArrays: CuArray
+    _type_with_eltype(::Type{<:CuArray}, T, N) = CuArray{T, N}
+    _type(::Type{<:CuArray}) = CuArray
+
+    import CUDAnative
+    import CUDAnative: CuDeviceArray
+    _type_with_eltype(::Type{<:CuDeviceArray}, T, N) = CuDeviceArray{T, N}
+    _type(::Type{<:CuDeviceArray}) = CuDeviceArray
+end
+
+function replace_storage(f, x::StructOfArrays{T, N}) where {T, N}
+    arrays = map(f, x.arrays)
     TT = typeof(arrays)
-    AT = _type_with_eltype(to, T, N)
+    AT = _type_with_eltype(eltype(arrays), T, N)
     StructOfArrays{T, N, AT, TT}(arrays)
 end
+
+Adapt.adapt_structure(to, x::StructOfArrays{T, N}) where {T, N} = replace_storage(y -> adapt(to, y), x)
 
 function gather_eltypes(T, visited = Set{Type}())
     (!isconcretetype(T) || T.mutable) && throw(ArgumentError("can only create an StructOfArrays of leaf type immutables"))

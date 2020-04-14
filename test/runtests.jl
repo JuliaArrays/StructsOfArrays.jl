@@ -2,6 +2,7 @@ using StructsOfArrays
 using Test
 using Random
 using StaticArrays
+using CUDAapi
 
 @testset "StructsOfArrays.jl" begin
     @testset "constructor" begin
@@ -71,5 +72,11 @@ using StaticArrays
         @test sum(regular) ≈ sum(soa)
         @test eltype(regular) === eltype(soa)
         @test regular[3] === soa[3]
+    end
+
+    if has_cuda_gpu()
+        @testset "CUDA" begin
+            include("cuda.jl")
+        end
     end
 end
