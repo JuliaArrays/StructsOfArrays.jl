@@ -1,0 +1,11 @@
+name = "StructsOfArrays"
+uuid = "ad108753-388a-4a68-a626-efa2fa9e4278"
+authors = ["Simon Kornblith <simon@simonster.com>", "Valentin Churavy <v.churavy@gmail.com>", "Other Contributors"]
+version = "0.0.3"
+
+[deps]
+Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+
+[compat]
+Adapt = "~1"
+julia = "≥ 1.3"

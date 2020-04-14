@@ -145,16 +145,16 @@ end
     end
 end
 
-# Base.IndexStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} =  Base.IndexStyle(A)
-# Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
+Base.IndexStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} =  Base.IndexStyle(A)
+Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
 
-# function Base.similar(A::StructOfArrays{T1,N,AT}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
-#     StructOfArrays(T, AT, dims)
-# end
+function Base.similar(A::StructOfArrays{T1,N,AT}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
+    StructOfArrays(T, AT, dims)
+end
 
-# function Base.broadcast_similar(f, ::Broadcast.ArrayStyle{StructOfArrays{T1,N,A}}, ::Type{T}, inds, As...) where {T1,N,A,T}
-#     StructOfArrays(T, A, Base.to_shape(inds))
-# end
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{StructOfArrays{T1,N,AT}}}, ::Type{T}) where {T1,N,AT,T}
+    StructOfArrays(T, AT, Base.to_shape(axes(bc)))
+end
 
 function Base.convert(::Type{<:StructOfArrays{T,N,AT}}, A::StructOfArrays{T,N}) where {T,N,AT<:AbstractArray{T,N}}
     if AT <: StructOfArrays
