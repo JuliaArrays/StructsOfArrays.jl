@@ -39,6 +39,15 @@ using StaticArrays
         @test typeof(similar(small, ComplexF64)) <: StructOfArrays
     end
 
+    @testset "broadcast" begin
+        regular = rand(MersenneTwister(0), ComplexF64, 100)
+        soa = convert(StructOfArrays, regular)
+        @test regular .+ regular == soa .+ soa
+        @test typeof(soa .+ soa) === typeof(soa)
+        @test typeof(regular .+ soa) === typeof(soa)
+        @test sin.(soa)[2] == sin(regular[2])
+    end
+
     @testset "recursive structs" begin
         struct OneField
             x::Int
