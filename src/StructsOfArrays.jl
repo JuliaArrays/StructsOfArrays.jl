@@ -3,7 +3,11 @@ module StructsOfArrays
 export StructOfArrays
 export replace_storage
 
+using Base.Broadcast
+import Base.Broadcast: BroadcastStyle, Broadcasted, AbstractArrayStyle
+
 using Adapt
+using LinearAlgebra
 
 """
     StructOfArrays{T, N, AT, U} <: AbstractArray{T,N}
@@ -32,19 +36,6 @@ end
 # Storage types of StructOfArrays need to implement this
 _type_with_eltype(::Type{<:Array}, T, N) = Array{T, N}
 _type(::Type{<:Array}) = Array
-
-using CUDAapi
-if has_cuda_gpu()
-    import CuArrays
-    import CuArrays: CuArray
-    _type_with_eltype(::Type{<:CuArray}, T, N) = CuArray{T, N}
-    _type(::Type{<:CuArray}) = CuArray
-
-    import CUDAnative
-    import CUDAnative: CuDeviceArray
-    _type_with_eltype(::Type{<:CuDeviceArray}, T, N) = CuDeviceArray{T, N}
-    _type(::Type{<:CuDeviceArray}) = CuDeviceArray
-end
 
 function replace_storage(f, x::StructOfArrays{T, N}) where {T, N}
     arrays = map(f, x.arrays)
@@ -162,13 +153,13 @@ end
 end
 
 Base.IndexStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} =  Base.IndexStyle(A)
-Base.BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
+BroadcastStyle(::Type{<:StructOfArrays{T,N,A}}) where {T,N,A<:AbstractArray} = Broadcast.ArrayStyle{StructOfArrays{T,N,A}}()
 
 function Base.similar(A::StructOfArrays{T1,N,AT}, ::Type{T}, dims::Dims) where {T1,N,AT,T}
     StructOfArrays(T, AT, dims)
 end
 
-function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{StructOfArrays{T1,N,AT}}}, ::Type{T}) where {T1,N,AT,T}
+function Base.similar(bc::Broadcasted{Broadcast.ArrayStyle{StructOfArrays{T1,N,AT}}}, ::Type{T}) where {T1,N,AT,T}
     StructOfArrays(T, AT, Base.to_shape(axes(bc)))
 end
 
@@ -209,5 +200,11 @@ function Base.Array{T,N}(src::StructOfArrays{T,N}) where {T,N}
     return dst
 end
 Array(src::StructOfArrays{T,N}) where {T,N} = Array{T,N}(src)
+
+include("storage/gpuarrays.jl")
+using CUDAapi
+if has_cuda_gpu()
+    include("storage/cuda.jl")
+end
 
 end
