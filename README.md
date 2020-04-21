@@ -37,6 +37,28 @@ or by converting an existing `StructOfArrays` using `replace_storage`:
 A = replace_storage(CuArray, convert(StructOfArrays, rand(ComplexF64, 10, 10)))
 ```
 
+This array can be used either in a kernel:
+
+```julia
+using CUDAnative
+function kernel!(A)
+    i = (blockIdx().x-1)*blockDim().x + threadIdx().x
+    if i <= length(A)
+        A[i] += A[i]
+    end
+    return nothing
+end
+threads = 256
+blocks = cld(length(A), threads)
+@cuda threads=threads blocks=blocks kernel!(A)
+```
+
+or via broadcasting:
+
+```julia
+A .+= A
+```
+
 Assignment and indexing works as with other `AbstractArray` types. Indexing a
 `StructOfArrays{T}` yields an object of type `T`, and you can assign objects of
 type `T` to a given index.
